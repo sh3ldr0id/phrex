@@ -3,3 +3,4 @@ tqdm
 keras
 tensorflow
 matplotlib
+scikit-learn
