@@ -1,6 +1,6 @@
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Input, Conv2D, Dense, Flatten, AveragePooling2D, Dropout
+from keras.layers import Input, Conv3D, Dense, Flatten, AveragePooling3D, Dropout
 from os import listdir
 from cv2 import imread, resize
 from tqdm import tqdm
@@ -23,14 +23,12 @@ CHUNK_SIZE = 10
 # Build Model
 model = Sequential()
 
-model.add(Input(shape=(11, 100, 100)))
+model.add(Input(shape=(11, 100, 100, 1)))
 
-model.add(Conv2D(32, kernel_size=(2, 2), activation='relu'))
-model.add(Conv2D(32, kernel_size=(3, 3), activation='relu'))
-# model.add(AveragePooling2D(pool_size=(2, 1)))
-model.add(Conv2D(64, kernel_size=(2, 2), activation='relu'))
-model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
-model.add(AveragePooling2D(pool_size=(2, 2)))
+model.add(Conv3D(32, kernel_size=(2, 2, 2), activation='relu'))
+model.add(AveragePooling3D(pool_size=(2, 2, 2)))
+model.add(Conv3D(64, kernel_size=(3, 3, 3), activation='relu'))
+model.add(AveragePooling3D(pool_size=(2, 2, 2)))
 
 model.add(Flatten())
 
@@ -38,9 +36,17 @@ model.add(Dense(128, activation='relu'))
 model.add(Dropout(0.2))
 model.add(Dense(1, activation='sigmoid'))
 
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.compile(loss='binary_crossentropy', optimizer='RMSprop', metrics=['accuracy'])
 
 model.summary()
+
+def getRandom(x):
+    index = x
+
+    while x == index:
+        index = randint(0, len(dataset)-1)
+
+    return index
 
 folders = listdir("dataset")
 
@@ -74,14 +80,6 @@ for i, chunk in enumerate(folder_chunks):
     )
 
     # Process Dataset
-    def getRandom(x):
-        index = x
-
-        while x == index:
-            index = randint(0, len(dataset)-1)
-
-        return index
-
     features = []
     labels = []
 
@@ -108,7 +106,7 @@ for i, chunk in enumerate(folder_chunks):
     features = np.array(features)
     print(features.shape)
 
-    # features = features.reshape((-1, features.shape[1], features.shape[2], features.shape[3], 1))
+    features = features.reshape((-1, features.shape[1], features.shape[2], features.shape[3], 1))
 
     memory_usage = round(
         features.nbytes / (1024 * 1024), 
@@ -121,8 +119,7 @@ for i, chunk in enumerate(folder_chunks):
     x_train, x_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
 
     # Train the model
-    model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=10, batch_size=128)
-    # model.fit(features, labels, epochs=10, batch_size=128)
+    model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=10, batch_size=16)
 
     model.save_weights("weights.h5")
 
