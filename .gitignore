@@ -2,3 +2,4 @@ venv
 dataset
 weights.h5
 __pycache__
+last_chunk.dat
